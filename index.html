@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery de Açaí Profissional</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f3eee7; padding: 15px; color: #333; }
+        .container { max-width: 480px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(74,21,75,0.08); }
+        
+        /* Cabeçalho e Títulos */
+        .header-actions { text-align: right; margin-bottom: 15px; }
+        h1 { color: #4A154B; text-align: center; margin-bottom: 25px; font-size: 1.9em; font-weight: 800; text-shadow: 1px 1px 1px rgba(0,0,0,0.05); }
+        h2 { color: #4A154B; margin: 25px 0 12px 0; font-size: 1.25em; border-bottom: 2px solid #ecdff0; padding-bottom: 6px; font-weight: 700; }
+        
+        /* Lista de Itens */
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f7f5f8; }
+        .item-info { flex: 1; padding-right: 10px; }
+        .item-title { font-weight: 600; color: #222; font-size: 1.05em; }
+        .item-price { color: #6b516d; font-size: 0.95em; margin-top: 4px; font-weight: 500; }
+        
+        /* Botões */
+        .btn { border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s ease; }
+        .btn-add { background: #4A154B; color: white; padding: 8px 16px; font-size: 1.1em; }
+        .btn-add:hover { background: #611c62; }
+        .btn-remove { background: #e53935; color: white; padding: 5px 10px; font-size: 0.85em; margin-left: 8px; }
+        .btn-admin-toggle { background: #f0f0f0; color: #555; font-size: 0.8em; padding: 6px 12px; border: 1px solid #ddd; }
+        .btn-salvar { background: #00c853; color: #fff; width: 100%; margin-top: 15px; padding: 14px; font-size: 1.05em; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-send { width: 100%; padding: 16px; font-size: 1.15em; margin-top: 25px; background: #25D366; color: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(37,211,102,0.3); font-weight: 700; }
+        
+        /* Formulários */
+        .form-group { margin-top: 16px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #444; font-size: 0.95em; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #dcd6dd; border-radius: 8px; font-size: 1em; background: #fdfbfe; outline: none; transition: border 0.2s; }
+        input:focus, select:focus { border-color: #4A154B; }
+        
+        /* Resumo Carrinho */
+        .total { font-size: 1.35em; font-weight: 800; text-align: right; margin-top: 20px; color: #4A154B; background: #f9f2fa; padding: 12px; border-radius: 8px; border-left: 4px solid #4A154B; }
+        .badge { background: #ecdff0; color: #4A154B; padding: 3px 8px; border-radius: 6px; font-size: 0.85em; font-weight: 700; margin-right: 5px; }
+        .vazio { color: #8c828e; text-align: center; padding: 20px 0; font-style: italic; font-size: 0.95em; }
+        
+        /* Painel Admin */
+        .admin-panel { background: #231924; color: white; padding: 18px; border-radius: 12px; margin-bottom: 25px; display: none; box-shadow: inset 0 2px 8px rgba(0,0,0,0.5); }
+        .admin-panel h3 { margin-bottom: 15px; color: #ffd54f; font-size: 1.2em; border-bottom: 1px solid #3d2f40; padding-bottom: 5px; }
+        .admin-panel h4 { margin: 15px 0 8px 0; color: #b39ddb; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px; }
+        .admin-row { display: flex; gap: 8px; margin-bottom: 10px; }
+        .admin-row input { padding: 10px; background: #fff; color: #111; border: none; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-actions">
+        <button class="btn btn-admin-toggle" onclick="toggleAdmin()">⚙️ Painel do Dono</button>
+    </div>
+
+    <!-- Painel de Gerenciamento Oculto -->
+    <div class="admin-panel" id="adminPanel">
+        <h3>Painel de Configuração</h3>
+        
+        <label style="color: #fff; font-size: 0.9em;">Nome do seu Negócio:</label>
+        <input type="text" id="adminNomeLoja" style="margin-bottom: 10px;">
+
+        <h4>Preços do Açaí (Tamanhos)</h4>
+        <div id="adminItensAcai"></div>
+
+        <h4>Preços dos Adicionais</h4>
+        <div id="adminItensAdicionais"></div>
+
+        <button class="btn btn-salvar" onclick="salvarAlteracoes()">💾 Gravar Configurações</button>
+    </div>
+
+    <!-- Nome Dinâmico da Açaiteria -->
+    <h1 id="nomeLojaExibido">🍇 Portal do Açaí</h1>
+    
+    <h2>1. Escolha o Tamanho</h2>
+    <div id="listaAcai"></div>
+
+    <h2>2. Adicionais Regionais e Extras</h2>
+    <div id="listaAdicionais"></div>
+
+    <h2>🛒 Resumo do Pedido</h2>
+    <div id="carrinho"></div>
+    <div class="total" id="total">Total: R$ 0,00</div>
+
+    <h2>📍 Dados para Entrega</h2>
+    <div class="form-group">
+        <label for="nome">Seu Nome:</label>
+        <input type="text" id="nome" placeholder="Ex: João Silva">
+    </div>
+    <div class="form-group">
+        <label for="endereco">Endereço Completo:</label>
+        <input type="text" id="endereco" placeholder="Rua, número, bairro e ponto de referência">
+    </div>
+    <div class="form-group">
+        <label for="pagamento">Forma de Pagamento:</label>
+        <select id="pagamento">
+            <option value="Pix">Pix</option>
+            <option value="Cartão de Crédito/Débito">Cartão de Crédito/Débito</option>
+            <option value="Dinheiro">Dinheiro</option>
+        </select>
+    </div>
+
+    <button class="btn btn-send" onclick="enviarPedido()">🚀 Enviar Pedido no WhatsApp</button>
+</div>
+
+<script>
+    // Configuração fixa do seu telefone
+    const TELEFONE_ESTABELECIMENTO = "55919933023069"; 
+
+    // Configuração inicial padrão
+    let dadosLoja = {
+        nome: "Portal do Açaí",
+        acai: [
+            { nome: "Açaí 500ml", preco: 18.00 },
+            { nome: "Açaí 700ml", preco: 24.00 },
+            { nome: "Açaí 1 Litro", preco: 32.00 }
+        ],
+        adicionais: [
+            { nome: "Farinha D'água", preco: 2.00 },
+            { nome: "Farinha de Tapioca", preco: 3.00 },
+            { nome: "Leite em Pó", preco: 3.00 },
+            { nome: "Granola", preco: 2.00 },
+            { nome: "Leite Condensado", preco: 2.50 }
+        ]
+    };
+
+    let carrinho = [];
+    let total = 0;
+
+    // Carrega dados se existirem no navegador
+    const dadosSalvos = localStorage.getItem('config_acaiteria_definitivo');
+    if (dadosSalvos) {
+        try {
+            dadosLoja = JSON.parse(dadosSalvos);
+        } catch(e) {
+            console.log("Reiniciando dados padrões.");
+        }
+    }
+
+    function renderizarCardapio() {
+        document.getElementById('nomeLojaExibido').innerText = `🍇 ${dadosLoja.nome}`;
+        
+        const divAcai = document.getElementById('listaAcai');
+        const divAdicionais = document.getElementById('listaAdicionais');
+        
+        divAcai.innerHTML = '';
+        divAdicionais.innerHTML = '';
+
+        dadosLoja.acai.forEach((item) => {
+            divAcai.innerHTML += `
+                <div class="item">
+                    <div class="item-info">
+                        <span class="item-title">${item.nome}</span>
+                        <div class="item-price">R$ ${parseFloat(item.preco).toFixed(2).replace('.', ',')}</div>
+                    </div>
+                    <button class="btn btn-add" onclick="adicionar('${item.nome}', ${item.preco})">+</button>
+                </div>`;
+        });
+
+        dadosLoja.adicionais.forEach((item) => {
+            divAdicionais.innerHTML += `
+                <div class="item">
+                    <div class="item-info">
+                        <span class="item-title">${item.nome}</span>
+                        <div class="item-price">R$ ${parseFloat(item.preco).toFixed(2).replace('.', ',')}</div>
+                    </div>
+                    <button class="btn btn-add" onclick="adicionar('Adicional: ${item.nome}', ${item.preco})">+</button>
+                </div>`;
+        });
+    }
+
+    function toggleAdmin() {
+        const painel = document.getElementById('adminPanel');
+        if (painel.style.display === 'block') {
+            painel.style.display = 'none';
+        } else {
+            painel.style.display = 'block';
+            abrirPainelAdmin();
+        }
+    }
+
+    function abrirPainelAdmin() {
+        document.getElementById('adminNomeLoja').value = dadosLoja.nome;
+        
+        const containerAcai = document.getElementById('adminItensAcai');
+        const containerAdicionais = document.getElementById('adminItensAdicionais');
+        
+        containerAcai.innerHTML = '';
+        containerAdicionais.innerHTML = '';
+        
+        dadosLoja.acai.forEach((item, i) => {
+            containerAcai.innerHTML += `
+                <div class="admin-row">
+                    <input type="text" id="edit-acai-nome-${i}" value="${item.nome}" style="flex:2;">
+                    <input type="text" id="edit-acai-preco-${i}" value="${parseFloat(item.preco).toFixed(2).replace('.', ',')}" style="flex:1; text-align:center;">
+                </div>`;
+        });
+
+        dadosLoja.adicionais.forEach((item, i) => {
+            containerAdicionais.innerHTML += `
+                <div class="admin-row">
+                    <input type="text" id="edit-ad-nome-${i}" value="${item.nome}" style="flex:2;">
+                    <input type="text" id="edit-ad-preco-${i}" value="${parseFloat(item.preco).toFixed(2).replace('.', ',')}" style="flex:1; text-align:center;">
+                </div>`;
+        });
+    }
+
+    function converterPreco(valorTexto) {
+        // Substitui a vírgula por ponto para o JavaScript ler corretamente
+        let limpo = valorTexto.replace(',', '.');
+        let convertido = parseFloat(limpo);
+        return isNaN(convertido) ? 0 : convertido;
+    }
+
+    function salvarAlteracoes() {
+        const novoNome = document.getElementById('adminNomeLoja').value.trim();
+        
+        if (!novoNome) {
+            alert('Digite um nome para sua loja!');
+            return;
+        }
+
+        dadosLoja.nome = novoNome;
+
+        // Atualiza preços dos açaís
+        dadosLoja.acai.forEach((item, i) => {
+            const novoNome = document.getElementById(`edit-acai-nome-${i}`).value.trim();
+            const novoPreco = converterPreco(document.getElementById(`edit-acai-preco-${i}`).value);
+            
+            if (novoNome) item.nome = novoNome;
+            if (novoPreco > 0) item.preco = novoPreco;
+        });
+
+        // Atualiza preços dos adicionais
+        dadosLoja.adicionais.forEach((item, i) => {
+            const novoNome = document.getElementById(`edit-ad-nome-${i}`).value.trim();
+            const novoPreco = converterPreco(document.getElementById(`edit-ad-preco-${i}`).value);
+            
+            if (novoNome) item.nome = novoNome;
+            if (novoPreco > 0) item.preco = novoPreco;
+        });
+
+        // Salva no localStorage
+        localStorage.setItem('config_acaiteria_definitivo', JSON.stringify(dadosLoja));
+        
+        alert('✅ Configurações salvas com sucesso!');
+        toggleAdmin();
+        renderizarCardapio();
+    }
+
+    function adicionar(nome, preco) {
+        carrinho.push({ nome, preco });
+        atualizarCarrinho();
+    }
+
+    function remover(indice) {
+        carrinho.splice(indice, 1);
+        atualizarCarrinho();
+    }
+
+    function atualizarCarrinho() {
+        const divCarrinho = document.getElementById('carrinho');
+        total = 0;
+
+        if (carrinho.length === 0) {
+            divCarrinho.innerHTML = '<div class="vazio">Carrinho vazio. Escolha algum item!</div>';
+            document.getElementById('total').innerText = 'Total: R$ 0,00';
+            return;
+        }
+
+        divCarrinho.innerHTML = '';
+        carrinho.forEach((item, i) => {
+            total += item.preco;
+            divCarrinho.innerHTML += `
+                <div class="item">
+                    <div class="item-info">
+                        <span class="item-title">${item.nome}</span>
+                        <div class="item-price">R$ ${parseFloat(item.preco).toFixed(2).replace('.', ',')}</div>
+                    </div>
+                    <button class="btn btn-remove" onclick="remover(${i})">Remover</button>
+                </div>`;
+        });
+
+        document.getElementById('total').innerText = `Total: R$ ${total.toFixed(2).replace('.', ',')}`;
+    }
+
+    function enviarPedido() {
+        const nome = document.getElementById('nome').value.trim();
+        const endereco = document.getElementById('endereco').value.trim();
+        const pagamento = document.getElementById('pagamento').value;
+
+        if (!nome || !endereco) {
+            alert('⚠️ Preencha seu nome e endereço!');
+            return;
+        }
+
+        if (carrinho.length === 0) {
+            alert('⚠️ Seu carrinho está vazio!');
+            return;
+        }
+
+        // Monta a mensagem do WhatsApp
+        let mensagem = `*🍇 NOVO PEDIDO - ${dadosLoja.nome}*\n\n`;
+        mensagem += `👤 Cliente: ${nome}\n`;
+        mensagem += `📍 Endereço: ${endereco}\n`;
+        mensagem += `💳 Pagamento: ${pagamento}\n\n`;
+        mensagem += `*Itens do Pedido:*\n`;
+
+        carrinho.forEach((item) => {
+            mensagem += `• ${item.nome} - R$ ${parseFloat(item.preco).toFixed(2).replace('.', ',')}\n`;
+        });
+
+        mensagem += `\n*Total: R$ ${total.toFixed(2).replace('.', ',')}*`;
+
+        // URL do WhatsApp
+        const urlWhatsApp = `https://wa.me/${TELEFONE_ESTABELECIMENTO}?text=${encodeURIComponent(mensagem)}`;
+
+        // Abre o WhatsApp
+        window.open(urlWhatsApp, '_blank');
+    }
+
+    // Inicializa ao carregar a página
+    window.addEventListener('DOMContentLoaded', () => {
+        renderizarCardapio();
+        atualizarCarrinho();
+    });
+</script>
+
+</body>
+</html>
